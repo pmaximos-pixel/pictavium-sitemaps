@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Image sitemaps for the Pictavium Blogger blogs.
+Image sitemaps for the Pictavium and Elpedia Blogger blogs.
 
 Reads each blog's full post feed, collects every image that appears in each
 post, and writes one image sitemap per blog into the "site" folder:
 
     site/pictavium-images.xml      (www.pictavium.com)
     site/el-pictavium-images.xml   (el.pictavium.com)
+    site/elpedia-images.xml        (www.elpedia.gr)
 
 Only the Python standard library is used. The Blogger feed must be set to
 "Full" (Settings > Site feed), otherwise it carries no images.
@@ -25,6 +26,7 @@ from xml.sax.saxutils import escape
 BLOGS = [
     ("https://www.pictavium.com", "pictavium-images.xml"),
     ("https://el.pictavium.com", "el-pictavium-images.xml"),
+    ("https://www.elpedia.gr", "elpedia-images.xml"),
 ]
 
 OUT_DIR = "site"
@@ -151,22 +153,25 @@ def build(blog, filename):
 
 
 def main():
-    failed = False
+    os.makedirs(OUT_DIR, exist_ok=True)
+    failed = 0
     for blog, filename in BLOGS:
         try:
             if build(blog, filename) == 0:
                 print(f"WARNING: no images found for {blog}. Is the site feed set to Full?")
         except Exception as exc:
-            failed = True
+            failed += 1
             print(f"ERROR building {blog}: {exc}", file=sys.stderr)
     # a page that tells a visitor what this site is
     with open(os.path.join(OUT_DIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(
-            "<!doctype html><meta charset='utf-8'><title>Pictavium image sitemaps</title>"
+            "<!doctype html><meta charset='utf-8'><title>Image sitemaps</title>"
             "<p><a href='pictavium-images.xml'>www.pictavium.com</a></p>"
-            "<p><a href='el-pictavium-images.xml'>el.pictavium.com</a></p>\n"
+            "<p><a href='el-pictavium-images.xml'>el.pictavium.com</a></p>"
+            "<p><a href='elpedia-images.xml'>www.elpedia.gr</a></p>\n"
         )
-    sys.exit(1 if failed else 0)
+    # one blog failing must not stop the others from being published
+    sys.exit(1 if failed == len(BLOGS) else 0)
 
 
 if __name__ == "__main__":
